@@ -6,7 +6,7 @@ package geos
 import "C"
 
 import (
-	"runtime"
+// "runtime"
 )
 
 type coordSeq struct {

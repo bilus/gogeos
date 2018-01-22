@@ -7,7 +7,7 @@ import "C"
 
 import (
 	"errors"
-	"runtime"
+	// "runtime"
 )
 
 // PGeometry represents a "prepared geometry", a type of geometry object that is
