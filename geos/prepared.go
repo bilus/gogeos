@@ -13,19 +13,24 @@ import (
 // PGeometry represents a "prepared geometry", a type of geometry object that is
 // optimized for a limited set of operations.
 type PGeometry struct {
-	p *C.GEOSPreparedGeometry
+	p   *C.GEOSPreparedGeometry
+	src *C.GEOSGeometry
 }
 
 // PrepareGeometry constructs a prepared geometry from a normal geometry object.
 func PrepareGeometry(g *Geometry) *PGeometry {
-	ptr := cGEOSPrepare(g.g)
-	p := &PGeometry{ptr}
+	// It clones src geometry because using it directly resulted in crashes
+	// if src geometry was destroyed before prepared geometry.
+	src := cGEOSGeom_clone(g.g)
+	ptr := cGEOSPrepare(src)
+	p := &PGeometry{ptr, src}
 	runtime.SetFinalizer(p, (*PGeometry).destroy)
 	return p
 }
 
 func (p *PGeometry) destroy() {
 	cGEOSPreparedGeom_destroy(p.p)
+	cGEOSGeom_destroy(p.src)
 	p.p = nil
 }
 
