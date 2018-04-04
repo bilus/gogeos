@@ -7,7 +7,7 @@ import "C"
 
 import (
 	"errors"
-	// "runtime"
+	"runtime"
 )
 
 // PGeometry represents a "prepared geometry", a type of geometry object that is
@@ -20,7 +20,7 @@ type PGeometry struct {
 func PrepareGeometry(g *Geometry) *PGeometry {
 	ptr := cGEOSPrepare(g.g)
 	p := &PGeometry{ptr}
-	// runtime.SetFinalizer(p, (*PGeometry).destroy)
+	runtime.SetFinalizer(p, (*PGeometry).destroy)
 	return p
 }
 

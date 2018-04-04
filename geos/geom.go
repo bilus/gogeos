@@ -8,7 +8,7 @@ import "C"
 import (
 	"errors"
 	"math"
-	//"runtime"
+	"runtime"
 	"unsafe"
 )
 
@@ -33,9 +33,9 @@ type Geometry struct {
 // underlying C object.
 func geomFromPtr(ptr *C.GEOSGeometry) *Geometry {
 	g := &Geometry{g: ptr}
-	// runtime.SetFinalizer(g, func(g *Geometry) {
-	// 	cGEOSGeom_destroy(ptr)
-	// })
+	runtime.SetFinalizer(g, func(g *Geometry) {
+		cGEOSGeom_destroy(ptr)
+	})
 	return g
 }
 
@@ -49,6 +49,14 @@ func geomFromPtrUnowned(ptr *C.GEOSGeometry) (*Geometry, error) {
 		return nil, Error()
 	}
 	return &Geometry{g: ptr}, nil
+}
+
+// Destroy releases C API resources associated with geometry.
+// Should only be used when geometry has ownership of the underlying C object.
+// Added to fix a memory leak in code relying on SetFinalizer automatic releases.
+func (g *Geometry) Destroy() {
+	runtime.SetFinalizer(g, nil)
+	cGEOSGeom_destroy(g.g)
 }
 
 // FromWKT is a factory function that returns a new Geometry decoded from a
@@ -391,9 +399,9 @@ func NewPolygon(shell []Coord, holes ...[]Coord) (*Geometry, error) {
 			return nil, err
 		}
 		ints = append(ints, g)
-		// runtime.SetFinalizer(g, nil)
+		runtime.SetFinalizer(g, nil)
 	}
-	// runtime.SetFinalizer(ext, nil)
+	runtime.SetFinalizer(ext, nil)
 	return PolygonFromGeom(ext, ints...)
 }
 
@@ -407,13 +415,15 @@ func PolygonFromGeom(shell *Geometry, holes ...*Geometry) (*Geometry, error) {
 	for i := range holes {
 		holeCPtrs = append(holeCPtrs, holes[i].g)
 		// The ownership of the holes becomes that of the new polygon
-		// runtime.SetFinalizer(holes[i], nil)
+		// TODO: Test
+		runtime.SetFinalizer(holes[i], nil)
 	}
 	if len(holeCPtrs) > 0 {
 		ptrHoles = &holeCPtrs[0]
 	}
 	// The ownership of the shell becomes that of the new polygon
-	// runtime.SetFinalizer(shell, nil)
+	// TODO: Test
+	runtime.SetFinalizer(shell, nil)
 	return geomFromC("NewPolygon", cGEOSGeom_createPolygon(shell.g, ptrHoles, C.uint(len(holeCPtrs))))
 }
 
@@ -433,7 +443,8 @@ func NewCollection(_type GeometryType, geoms ...*Geometry) (*Geometry, error) {
 		geomCPtrs = append(geomCPtrs, geoms[i].g)
 		// The ownership of the component geometries becomes that of the new
 		// collection geometry
-		// runtime.SetFinalizer(geoms[i], nil)
+		// TODO: Test
+		runtime.SetFinalizer(geoms[i], nil)
 	}
 	ptrGeoms = &geomCPtrs[0]
 	return geomFromC("NewCollection", cGEOSGeom_createCollection(C.int(_type), ptrGeoms, C.uint(len(geomCPtrs))))

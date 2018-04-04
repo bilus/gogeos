@@ -6,7 +6,7 @@ package geos
 import "C"
 
 import (
-// "runtime"
+	"runtime"
 )
 
 type coordSeq struct {
@@ -23,9 +23,10 @@ func newCoordSeq(size, dims int) *coordSeq {
 
 func coordSeqFromPtr(ptr *C.GEOSCoordSequence) *coordSeq {
 	cs := &coordSeq{c: ptr}
-	// runtime.SetFinalizer(cs, func(*coordSeq) {
-	// 	cGEOSCoordSeq_destroy(ptr)
-	// })
+	// TODO: Test
+	runtime.SetFinalizer(cs, func(*coordSeq) {
+		cGEOSCoordSeq_destroy(ptr)
+	})
 	return cs
 }
 
