@@ -24,11 +24,12 @@ func PrepareGeometry(g *Geometry) *PGeometry {
 	src := cGEOSGeom_clone(g.g)
 	ptr := cGEOSPrepare(src)
 	p := &PGeometry{ptr, src}
-	runtime.SetFinalizer(p, (*PGeometry).destroy)
+	runtime.SetFinalizer(p, (*PGeometry).Destroy)
 	return p
 }
 
-func (p *PGeometry) destroy() {
+func (p *PGeometry) Destroy() {
+	runtime.SetFinalizer(p, nil)
 	cGEOSPreparedGeom_destroy(p.p)
 	cGEOSGeom_destroy(p.src)
 	p.p = nil
